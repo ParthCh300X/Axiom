@@ -1,146 +1,78 @@
-AXIOM — Personal Expense Intelligence
+# AXIOM — Personal Expense Intelligence
 
-"Android" (https://img.shields.io/badge/Platform-Android-green?style=for-the-badge)
-"Kotlin" (https://img.shields.io/badge/Kotlin-1.9-blue?style=for-the-badge)
-"Jetpack Compose" (https://img.shields.io/badge/Jetpack-Compose-orange?style=for-the-badge)
-"Architecture" (https://img.shields.io/badge/Architecture-MVVM-purple?style=for-the-badge)
-"Offline" (https://img.shields.io/badge/Mode-Offline-critical?style=for-the-badge)
+![Android](https://img.shields.io/badge/Platform-Android-green?style=for-the-badge)
+![Kotlin](https://img.shields.io/badge/Kotlin-1.9-blue?style=for-the-badge)
+![Jetpack Compose](https://img.shields.io/badge/Jetpack-Compose-orange?style=for-the-badge)
+![Architecture](https://img.shields.io/badge/Architecture-MVVM-purple?style=for-the-badge)
+![Offline](https://img.shields.io/badge/Mode-Offline-critical?style=for-the-badge)
 
 ---
 
-✦ Overview
+## ✦ Overview
 
 AXIOM is a minimalist, behavior-driven expense tracker built for clarity, control, and discipline.
 
-No clutter. No charts.
+No clutter. No charts.  
 Just precise budgeting, real-time feedback, and accountability.
 
 ---
 
-✦ Core Philosophy
+## ✦ Core Philosophy
 
-«What you track shapes how you spend.»
+> What you track shapes how you spend.
 
 AXIOM doesn’t just record expenses—it guides decisions through subtle constraints and intelligent feedback.
 
 ---
 
-✦ Features
+## ✦ Features
 
-◉ Budget System
+### ◉ Budget System
+- Global monthly budget
+- Category-wise allocation
+- Prevents over-allocation
 
-- Set a global monthly budget
-- Allocate into custom categories
-- Prevent over-allocation automatically
+### ◉ Category Types
+- DAILY → Adaptive daily allowance  
+- VARIABLE → Flexible monthly cap  
+- ONE_TIME → Locks after completion  
 
-◉ Category Types
+### ◉ Smart Daily Logic
+- Real-time “today remaining”
+- Dynamic allowance calculation
+- Soft overspending warnings  
 
-- DAILY → Adaptive per-day allowance
-- VARIABLE → Flexible monthly cap
-- ONE_TIME → Locks after completion
+### ◉ Transactions
+- Add with notes
+- Delete with recalculation
+- Full history tracking  
 
-◉ Smart Daily Logic
+### ◉ Timeline History
+- Date-wise grouping
+- Clean and minimal UI  
 
-- Dynamic daily allowance calculation
-- Real-time “today remaining” tracking
-- Soft warnings when exceeding limits
-
-◉ Transaction System
-
-- Add expenses with notes
-- Full transaction history
-- Long-press to delete (auto recalculates budget)
-
-◉ Timeline History
-
-- Clean date-wise grouping
-- Minimal, readable structure
-- No unnecessary noise
-
-◉ Edit & Control
-
+### ◉ Edit & Control
 - Edit categories safely
-- Budget integrity maintained
-- Locked categories handled intelligently
+- Budget integrity preserved  
 
-◉ Monthly Reset Engine
-
-- Auto reset at new month
-- Preserves structure, clears usage
+### ◉ Monthly Reset
+- Automatic reset every month  
+- Structure preserved  
 
 ---
 
-✦ UI & Experience
+## ✦ Tech Stack
 
-- Built with Jetpack Compose
-- Fiery accent palette (orange / red spectrum)
-- Subtle behavioral cues (color shifts, feedback)
-- Designed for speed, not distraction
-
----
-
-✦ Tech Stack
-
-Layer| Technology
-Language| Kotlin
-UI| Jetpack Compose
-Architecture| MVVM
-Database| Room
-Storage| DataStore
-State Mgmt| StateFlow / Flow
-Platform| Android (API 24+)
+- Kotlin  
+- Jetpack Compose  
+- MVVM Architecture  
+- Room Database  
+- DataStore  
+- StateFlow  
 
 ---
 
-✦ Project Structure
+## ✦ Installation
 
-axiom/
-├── data/
-│   ├── local/        # Room DB, DAO, Entities
-│   ├── repository/   # Data abstraction layer
-│
-├── ui/
-│   ├── screens/      # Home, History
-│   ├── components/   # Cards, dialogs, sheets
-│   ├── theme/        # Colors, typography
-│
-├── viewmodel/        # Business logic
-
----
-
-✦ Key Highlights
-
-- Fully offline-first
-- Reactive UI with Flow
-- Clean separation of concerns
-- Designed for real-world usage, not demos
-
----
-
-✦ Installation
-
+```bash
 git clone https://github.com/yourusername/axiom.git
-
-Open in Android Studio → Run on device/emulator.
-
----
-
-✦ Future Scope
-
-- Home screen widget (quick expense entry)
-- Smart spending insights
-- Export / backup system
-- Behavioral nudges
-
----
-
-✦ Author
-
-Parth
-B.Tech ECE (IoT), IIIT Nagpur
-
----
-
-✦ Closing Line
-
-«Discipline is quiet. AXIOM is quieter.»
