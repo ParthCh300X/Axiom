@@ -17,5 +17,7 @@ data class CategoryEntity(
 
     val spent: Double = 0.0,
 
-    val isLocked: Boolean = false
+    val isLocked: Boolean = false,
+
+    val isPinned: Boolean = false // ✅ NEW
 )

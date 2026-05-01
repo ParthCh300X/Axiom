@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import parth.appdev.axiom.data.local.dao.CategoryDao
 import parth.appdev.axiom.data.local.dao.TransactionDao
 import parth.appdev.axiom.data.local.entity.CategoryEntity
@@ -11,7 +13,7 @@ import parth.appdev.axiom.data.local.entity.TransactionEntity
 
 @Database(
     entities = [CategoryEntity::class, TransactionEntity::class],
-    version = 1,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -24,6 +26,13 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
+        // No schema change — just prevents data wipe on version bump
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // intentionally empty
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
 
@@ -31,7 +40,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "axiom_database"
-                ).build()
+                )
+                    .addMigrations(MIGRATION_2_3)
+                    .build()
 
                 INSTANCE = instance
                 instance

@@ -11,8 +11,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.foundation.text.KeyboardOptions
 import parth.appdev.axiom.data.local.entity.CategoryEntity
 import parth.appdev.axiom.ui.components.*
 import parth.appdev.axiom.ui.screens.history.HistoryScreen
@@ -25,26 +27,31 @@ fun HomeScreen(
     viewModel: AxiomViewModel = viewModel()
 ) {
 
-    val categories by viewModel.categories.collectAsState()
-    val totalBudget by viewModel.totalBudgetFlow.collectAsState()
+    val categories     by viewModel.categories.collectAsState()
+    val totalBudget    by viewModel.totalBudgetFlow.collectAsState()
+    val showReset      by viewModel.showResetDialog.collectAsState()
+    val carryForward   by viewModel.carryForwardFlow.collectAsState()
 
-    val allocated = viewModel.getAllocatedBudget(categories)
+    val allocated           = viewModel.getAllocatedBudget(categories)
     val remainingToAllocate = totalBudget - allocated
-    val totalSpent = viewModel.getTotalSpent(categories)
+    val totalSpent          = viewModel.getTotalSpent(categories)
+    val insight             = viewModel.getSpendingInsight(totalBudget, totalSpent)
 
     var selectedCategory by remember { mutableStateOf<CategoryEntity?>(null) }
-    var showSheet by remember { mutableStateOf(false) }
-    var showAddCategory by remember { mutableStateOf(false) }
-    var showMenu by remember { mutableStateOf(false) }
-    var showHistory by remember { mutableStateOf(false) }
-    var showEdit by remember { mutableStateOf(false) }
+    var showSheet        by remember { mutableStateOf(false) }
+    var showAddCategory  by remember { mutableStateOf(false) }
+    var showMenu         by remember { mutableStateOf(false) }
+    var showHistory      by remember { mutableStateOf(false) }
+    var showEdit         by remember { mutableStateOf(false) }
+    var showAddFunds     by remember { mutableStateOf(false) }
+    var addFundsAmount   by remember { mutableStateOf("") }
 
     // ---------------------------
-    // HISTORY SCREEN (WITH BACK)
+    // HISTORY SCREEN
     // ---------------------------
     if (showHistory && selectedCategory != null) {
         HistoryScreen(
-            categoryId = selectedCategory!!.id,
+            categoryId   = selectedCategory!!.id,
             categoryName = selectedCategory!!.name,
             onBack = {
                 showHistory = false
@@ -70,38 +77,45 @@ fun HomeScreen(
 
             GlobalBudgetCard(
                 totalBudget = totalBudget,
-                spent = totalSpent
+                spent       = totalSpent,
+                insight     = insight,
+                onEditBudget = { newAmount ->
+                    viewModel.setTotalBudget(newAmount)
+                }
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = "Unallocated: ${formatCurrency(remainingToAllocate)}",
-                style = MaterialTheme.typography.bodySmall
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Unallocated: ${formatCurrency(remainingToAllocate)}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                TextButton(
+                    onClick = { showAddFunds = true },
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                ) {
+                    Text("+ Add Funds", style = MaterialTheme.typography.bodySmall)
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+
                 items(categories) { category ->
 
                     val todayTransactions by viewModel
                         .getTransactionsForCategory(category.id)
                         .collectAsState(initial = emptyList())
 
-                    val todaySpent = viewModel.getTodaySpent(todayTransactions)
-
-                    val dailyAllowance =
-                        if (category.type == "DAILY")
-                            viewModel.getDailyAllowance(category)
-                        else null
-
-                    val todayRemaining =
-                        if (dailyAllowance != null)
-                            viewModel.getTodayRemaining(category, todaySpent)
-                        else null
+                    val todaySpent      = viewModel.getTodaySpent(todayTransactions)
+                    val dailyAllowance  = if (category.type == "DAILY") viewModel.getDailyAllowance(category) else null
+                    val todayRemaining  = if (dailyAllowance != null) viewModel.getTodayRemaining(category, todaySpent) else null
 
                     Box(
                         modifier = Modifier
@@ -120,12 +134,13 @@ fun HomeScreen(
                             )
                     ) {
                         CategoryCard(
-                            name = category.name,
-                            budget = category.budget,
-                            spent = category.spent,
-                            isLocked = category.isLocked,
-                            dailyLimit = todayRemaining,
-                            todaySpent = todaySpent
+                            name        = category.name,
+                            budget      = category.budget,
+                            spent       = category.spent,
+                            isLocked    = category.isLocked,
+                            isPinned    = category.isPinned,
+                            dailyLimit  = todayRemaining,
+                            todaySpent  = todaySpent
                         )
                     }
                 }
@@ -143,20 +158,94 @@ fun HomeScreen(
     }
 
     // ---------------------------
+    // MONTHLY RESET DIALOG
+    // ---------------------------
+    if (showReset) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissReset() },
+            confirmButton = {
+                Button(onClick = { viewModel.confirmReset(carryForward) }) {
+                    Text("Reset")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissReset() }) {
+                    Text("Later")
+                }
+            },
+            title = { Text("New Month Detected") },
+            text = {
+                Column {
+                    Text("Reset all category spending for the new month?")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Switch(
+                            checked = carryForward,
+                            onCheckedChange = { viewModel.setCarryForward(it) }
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "Carry forward unspent balance",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+        )
+    }
+
+    // ---------------------------
+    // ADD FUNDS DIALOG
+    // ---------------------------
+    if (showAddFunds) {
+        AlertDialog(
+            onDismissRequest = { showAddFunds = false; addFundsAmount = "" },
+            confirmButton = {
+                Button(onClick = {
+                    val amt = addFundsAmount.toDoubleOrNull() ?: 0.0
+                    if (amt > 0) {
+                        viewModel.addFunds(amt)
+                        showAddFunds = false
+                        addFundsAmount = ""
+                    }
+                }) { Text("Add") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddFunds = false; addFundsAmount = "" }) {
+                    Text("Cancel")
+                }
+            },
+            title = { Text("Add Funds") },
+            text = {
+                Column {
+                    Text(
+                        text = "Current budget: ${formatCurrency(totalBudget)}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = addFundsAmount,
+                        onValueChange = { addFundsAmount = it },
+                        label = { Text("Amount to add") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        )
+    }
+
+    // ---------------------------
     // ADD EXPENSE
     // ---------------------------
     if (showSheet && selectedCategory != null) {
         AddExpenseBottomSheet(
-            onDismiss = {
-                showSheet = false
-                selectedCategory = null
-            },
+            onDismiss = { showSheet = false; selectedCategory = null },
             onAdd = { amount, note ->
-                viewModel.addExpense(
-                    category = selectedCategory!!,
-                    amount = amount,
-                    note = note
-                )
+                viewModel.addExpense(category = selectedCategory!!, amount = amount, note = note)
             }
         )
     }
@@ -180,23 +269,21 @@ fun HomeScreen(
     // EDIT CATEGORY
     // ---------------------------
     if (showEdit && selectedCategory != null) {
-
-        val allocated = viewModel.getAllocatedBudget(categories)
-        val remaining =
-            totalBudget - (allocated - selectedCategory!!.budget)
+        val allocatedForEdit = viewModel.getAllocatedBudget(categories)
+        val remainingForEdit = totalBudget - (allocatedForEdit - selectedCategory!!.budget)
 
         EditCategoryDialog(
-            category = selectedCategory!!,
-            remainingBudget = remaining,
-            onDismiss = { showEdit = false },
-            onUpdate = { name, type, budget ->
+            category        = selectedCategory!!,
+            remainingBudget = remainingForEdit,
+            onDismiss       = { showEdit = false },
+            onUpdate        = { name, type, budget ->
                 viewModel.updateCategory(
-                    category = selectedCategory!!,
-                    newName = name,
-                    newType = type,
-                    newBudget = budget,
+                    category      = selectedCategory!!,
+                    newName       = name,
+                    newType       = type,
+                    newBudget     = budget,
                     allCategories = categories,
-                    totalBudget = totalBudget
+                    totalBudget   = totalBudget
                 )
             }
         )
@@ -206,36 +293,38 @@ fun HomeScreen(
     // LONG PRESS MENU
     // ---------------------------
     if (showMenu && selectedCategory != null) {
+
+        // Export result snackbar state
+        var exportMsg by remember { mutableStateOf("") }
+
         AlertDialog(
             onDismissRequest = { showMenu = false },
             confirmButton = {},
             dismissButton = {
-                TextButton(onClick = { showMenu = false }) {
-                    Text("Close")
-                }
+                TextButton(onClick = { showMenu = false }) { Text("Close") }
             },
             title = { Text("Category Options") },
             text = {
                 Column {
 
                     TextButton(
-                        onClick = {
-                            showMenu = false
-                            showHistory = true
-                        },
+                        onClick = { showMenu = false; showHistory = true },
                         modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("View History")
-                    }
+                    ) { Text("View History") }
+
+                    TextButton(
+                        onClick = { showMenu = false; showEdit = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Edit") }
 
                     TextButton(
                         onClick = {
+                            viewModel.togglePinCategory(selectedCategory!!)
                             showMenu = false
-                            showEdit = true
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Edit")
+                        Text(if (selectedCategory!!.isPinned) "Unpin" else "Pin")
                     }
 
                     TextButton(

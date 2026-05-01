@@ -27,6 +27,10 @@ class AxiomRepository(
     suspend fun deleteCategory(category: CategoryEntity) =
         categoryDao.deleteCategory(category)
 
+    // ✅ NEW: toggle pin
+    suspend fun updatePinStatus(category: CategoryEntity) =
+        categoryDao.updateCategory(category)
+
     // ---------------------------
     // TRANSACTIONS
     // ---------------------------
@@ -36,10 +40,10 @@ class AxiomRepository(
 
     fun getTransactions(categoryId: Int): Flow<List<TransactionEntity>> =
         transactionDao.getTransactionsForCategory(categoryId)
+
     suspend fun deleteTransaction(transaction: TransactionEntity) =
         transactionDao.deleteTransaction(transaction)
 
-    // ✅ NEW: today's transactions only
     fun getTodayTransactions(
         categoryId: Int,
         startOfDay: Long

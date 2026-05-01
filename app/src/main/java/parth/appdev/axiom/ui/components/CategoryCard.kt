@@ -2,14 +2,15 @@ package parth.appdev.axiom.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -25,12 +26,14 @@ fun CategoryCard(
     budget: Double,
     spent: Double,
     isLocked: Boolean,
-    dailyLimit: Double? = null,   // todayRemaining
+    isPinned: Boolean = false,
+    dailyLimit: Double? = null,
     todaySpent: Double = 0.0
 ) {
 
     val remaining = budget - spent
     val progress = if (budget == 0.0) 0f else (spent / budget).toFloat()
+    val percentUsed = if (budget == 0.0) 0 else (progress * 100).toInt()
 
     val animatedProgress by animateFloatAsState(targetValue = progress, label = "")
 
@@ -40,9 +43,6 @@ fun CategoryCard(
         else -> Crimson
     }
 
-    // ---------------------------
-    // Daily Intelligence
-    // ---------------------------
     val todayRemaining = dailyLimit ?: 0.0
 
     val stateText = when {
@@ -59,9 +59,6 @@ fun CategoryCard(
         else -> Crimson
     }
 
-    // ---------------------------
-    // Subtle Pulse (only when overspent)
-    // ---------------------------
     val infiniteTransition = rememberInfiniteTransition(label = "")
 
     val pulseAlpha by infiniteTransition.animateFloat(
@@ -87,56 +84,75 @@ fun CategoryCard(
             .padding(16.dp)
     ) {
 
-        // Header
+        // Header row
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(name, style = MaterialTheme.typography.titleMedium)
 
-            if (isLocked) {
-                Icon(Icons.Default.Lock, contentDescription = "Locked")
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                // % used badge
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = dangerColor.copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        text = "$percentUsed%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = dangerColor,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                    )
+                }
+
+                if (isPinned) {
+                    Icon(
+                        imageVector = Icons.Default.PushPin,
+                        contentDescription = "Pinned",
+                        tint = DeepOrange,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+
+                if (isLocked) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = "Locked",
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
             }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Monthly remaining
         Text(
             text = "${formatCurrency(remaining)} left",
             style = MaterialTheme.typography.bodyLarge
         )
 
-        // ---------------------------
-        // DAILY SECTION (ELITE)
-        // ---------------------------
         if (dailyLimit != null) {
-
             Spacer(modifier = Modifier.height(10.dp))
-
             Column {
-
-                // Main number
                 Text(
                     text = "Today left: ${formatCurrency(todayRemaining)}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (todayRemaining <= 0) Crimson else MaterialTheme.colorScheme.onSurface
                 )
-
                 Spacer(modifier = Modifier.height(2.dp))
-
-                // Context line
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-
                     Text(
                         text = "Spent: ${formatCurrency(todaySpent)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
-
                     Text(
                         text = stateText,
                         style = MaterialTheme.typography.bodySmall,
@@ -148,7 +164,6 @@ fun CategoryCard(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Progress bar
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -161,9 +176,7 @@ fun CategoryCard(
                     .fillMaxWidth(animatedProgress.coerceIn(0f, 1f))
                     .fillMaxHeight()
                     .background(
-                        brush = Brush.horizontalGradient(
-                            listOf(dangerColor, dangerColor)
-                        )
+                        brush = Brush.horizontalGradient(listOf(dangerColor, dangerColor))
                     )
             )
         }

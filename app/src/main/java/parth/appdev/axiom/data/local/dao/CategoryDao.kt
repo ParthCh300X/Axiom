@@ -7,7 +7,10 @@ import parth.appdev.axiom.data.local.entity.CategoryEntity
 @Dao
 interface CategoryDao {
 
-    @Query("SELECT * FROM categories")
+    @Query("""
+        SELECT * FROM categories
+        ORDER BY isPinned DESC, id DESC
+    """)
     fun getAllCategories(): Flow<List<CategoryEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
